@@ -108,6 +108,11 @@ class Util:
         self.__save_image_plot(fig_input, examples_dir, 'input', step, fig_input=True)
         self.__save_image_plot(fig_ground_truth, examples_dir, 'ground_truth', step)
         self.__save_image_plot(fig_prediction, examples_dir, 'prediction', step)
+        
+    def save_predictions(self, predictions):
+        pred_dir = self.__create_dir('predictions')
+        filename = os.path.join(pred_dir, self.base_filename + '.pt')
+        torch.save(predictions, filename)
     
     def get_checkpoint_filename(self):
         check_dir = self.__create_dir('checkpoints')

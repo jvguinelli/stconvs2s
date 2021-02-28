@@ -175,12 +175,16 @@ class MLBuilder:
         
     def __get_dataset_file(self):
         dataset_file, dataset_name = None, None
-        if (self.config.chirps):
-            dataset_file = 'data/dataset-chirps-1981-2019-seq5-ystep' + self.step + '.nc'
-            dataset_name = 'chirps'
+        if self.config.dataset:
+            dataset_file = 'data/' + self.config.dataset
+            dataset_name = 'shalow_water'
         else:
-            dataset_file = 'data/dataset-ucar-1979-2015-seq5-ystep' + self.step + '.nc'
-            dataset_name = 'cfsr'
+            if (self.config.chirps):
+                dataset_file = 'data/dataset-chirps-1981-2019-seq5-ystep' + self.step + '.nc'
+                dataset_name = 'chirps'
+            else:
+                dataset_file = 'data/dataset-ucar-1979-2015-seq5-ystep' + self.step + '.nc'
+                dataset_name = 'cfsr'
         
         return dataset_name, dataset_file
         

@@ -111,6 +111,7 @@ class Evaluator:
        
     def eval(self, is_test=True, is_chirps=False):
         self.model.eval()
+        predictions = []
         cumulative_rmse, cumulative_mae = 0.0, 0.0
         observation_rmse, observation_mae = [0]*self.step, [0]*self.step
         loader_size = len(self.data_loader)
@@ -127,6 +128,7 @@ class Evaluator:
                 cumulative_mae += mae_loss.item()
                 
                 if is_test:
+                    predictions.append(output)
                     #metric per observation (lat x lon) at each time step (t) 
                     for i in range(self.step):
                         output_observation = output[:,:,i,:,:]
@@ -136,8 +138,10 @@ class Evaluator:
                         observation_rmse[i] += rmse_loss_obs.item()
                         observation_mae[i] += mae_loss_obs.item()
         
-            if is_test:             
-                self.util.save_examples(inputs, target, output, self.step)
+            if is_test:
+                predictions = torch.cat(predictions, dim=0)
+                self.util.save_predictions(predictions)
+                # self.util.save_examples(inputs, target, output, self.step)
                 print('>>>>>>>>> Metric per observation (lat x lon) at each time step (t)')
                 print('RMSE')
                 print(*np.divide(observation_rmse, batch_i+1), sep = ",")

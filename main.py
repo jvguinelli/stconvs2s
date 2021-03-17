@@ -33,6 +33,7 @@ def get_arguments():
     parser.add_argument('--small-dataset', action='store_true', dest='small_dataset')
     parser.add_argument('--chirps', action='store_true')
     parser.add_argument('--dataset', default=None)
+    parser.add_argument('-r', '--regularization', type=float, dest='regularization', default=0.0001)
        
     return parser.parse_args()
     

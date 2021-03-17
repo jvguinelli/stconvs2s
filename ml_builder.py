@@ -91,7 +91,7 @@ class MLBuilder:
         model = model_bulder(train_dataset.X.shape, self.config.num_layers, self.config.hidden_dim, 
                              self.config.kernel_size, self.device, self.dropout_rate, int(self.step))
         model.to(self.device)
-        criterion = RMSELoss()
+        criterion = RMSELoss(reg=self.config.regularization)
         opt_params = {'lr': 0.001, 
                       'alpha': 0.9, 
                       'eps': 1e-6}

@@ -92,7 +92,7 @@ class MLBuilder:
                              self.config.kernel_size, self.device, self.dropout_rate, int(self.step))
         model.to(self.device)
         criterion = RMSELoss(reg=self.config.regularization)
-        opt_params = {'lr': 0.001, 
+        opt_params = {'lr': self.config.learning_rate, 
                       'alpha': 0.9, 
                       'eps': 1e-6}
         optimizer = torch.optim.RMSprop(model.parameters(), **opt_params)

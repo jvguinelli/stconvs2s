@@ -19,7 +19,6 @@ def get_arguments():
     parser.add_argument('-p', '--patience', type=int, default=16)
     parser.add_argument('-w', '--workers', type=int, default=4)
     parser.add_argument('-c', '--cuda', default=0)
-    parser.add_argument('-s', '--step', default=5)
     parser.add_argument('-m', '--model', default='stconvs2s')
     parser.add_argument('-l', '--num-layers', type=int, dest='num_layers', default=3)
     parser.add_argument('-d', '--hidden-dim', type=int, dest='hidden_dim', default=32)
@@ -35,6 +34,8 @@ def get_arguments():
     parser.add_argument('--dataset', default=None)
     parser.add_argument('-r', '--regularization', type=float, dest='regularization', default=0.0001)
     parser.add_argument('-lr', '--learning-rate', type=float, dest='learning_rate', default=0.001)
+    parser.add_argument('--x-step', dest='x_step', type=int, default=5)
+    parser.add_argument('--y-step', dest='y_step', type=int, default=5)
        
     return parser.parse_args()
     
@@ -102,7 +103,8 @@ if __name__ == '__main__':
     util = Util(args.model, version=args.version)  
     try:                                
         message = run(model_builder, args.iteration, util)
-        message['step'] = args.step
+        message['x_step'] = args.x_step
+        message['y_step'] = args.y_step
         message['hostname'] = platform.node()
     except Exception as e:
         traceback.print_exc()

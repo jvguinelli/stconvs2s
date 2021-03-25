@@ -27,10 +27,11 @@ class MLBuilder:
         self.config = config
         self.device = device
         self.dataset_type = 'small-dataset' if (self.config.small_dataset) else 'full-dataset'
-        self.step = str(config.step)
+        self.x_step = config.x_step
+        self.y_step = config.y_step
         self.dataset_name, self.dataset_file = self.__get_dataset_file()
         self.dropout_rate = self.__get_dropout_rate()
-        self.filename_prefix = self.dataset_name + '_step' + self.step
+        self.filename_prefix = f"{self.dataset_name}_x_step_{self.x_step}_y_step_{self.y_step}"
                 
     def run_model(self, number):
         self.__define_seed(number)
@@ -42,11 +43,11 @@ class MLBuilder:
             ds = ds[dict(sample=slice(0,500))]
 
         train_dataset = NetCDFDataset(ds, test_split=test_split, 
-                                      validation_split=validation_split)
+                                      validation_split=validation_split, x_step=self.x_step)
         val_dataset   = NetCDFDataset(ds, test_split=test_split, 
-                                      validation_split=validation_split, is_validation=True)
+                                      validation_split=validation_split, x_step=self.x_step, is_validation=True)
         test_dataset  = NetCDFDataset(ds, test_split=test_split, 
-                                      validation_split=validation_split, is_test=True)
+                                      validation_split=validation_split, x_step=self.x_step, is_test=True)
         if (self.config.verbose):
             print('[X_train] Shape:', train_dataset.X.shape)
             print('[y_train] Shape:', train_dataset.y.shape)
@@ -89,7 +90,7 @@ class MLBuilder:
         # Creating the model    
         model_bulder = models[self.config.model]
         model = model_bulder(train_dataset.X.shape, self.config.num_layers, self.config.hidden_dim, 
-                             self.config.kernel_size, self.device, self.dropout_rate, int(self.step))
+                             self.config.kernel_size, self.device, self.dropout_rate, self.y_step)
         model.to(self.device)
         criterion = RMSELoss(reg=self.config.regularization)
         opt_params = {'lr': self.config.learning_rate, 
@@ -135,7 +136,7 @@ class MLBuilder:
                 
     
     def __load_and_evaluate(self, model, criterion, optimizer, test_loader, train_time, util):  
-        evaluator = Evaluator(model, criterion, optimizer, test_loader, self.device, util, self.step)
+        evaluator = Evaluator(model, criterion, optimizer, test_loader, self.device, util, self.y_step)
         if self.config.pre_trained is not None:
             # Load pre-trained model
             best_epoch, val_loss = evaluator.load_checkpoint(self.config.pre_trained, self.dataset_type, self.config.model)
@@ -180,10 +181,10 @@ class MLBuilder:
             dataset_name = 'shalow_water'
         else:
             if (self.config.chirps):
-                dataset_file = 'data/dataset-chirps-1981-2019-seq5-ystep' + self.step + '.nc'
+                dataset_file = 'data/dataset-chirps-1981-2019-seq5-ystep' + self.y_step + '.nc'
                 dataset_name = 'chirps'
             else:
-                dataset_file = 'data/dataset-ucar-1979-2015-seq5-ystep' + self.step + '.nc'
+                dataset_file = 'data/dataset-ucar-1979-2015-seq5-ystep' + self.y_step + '.nc'
                 dataset_name = 'cfsr'
         
         return dataset_name, dataset_file

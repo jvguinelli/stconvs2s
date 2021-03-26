@@ -48,6 +48,10 @@ class MLBuilder:
                                       validation_split=validation_split, x_step=self.x_step, is_validation=True)
         test_dataset  = NetCDFDataset(ds, test_split=test_split, 
                                       validation_split=validation_split, x_step=self.x_step, is_test=True)
+        
+        # INITIAL STATE - batch x channel x time x latitude x longitude
+        initial_state = torch.tensor(train_dataset.X)[:1, :, :1].to(self.device)
+        
         if (self.config.verbose):
             print('[X_train] Shape:', train_dataset.X.shape)
             print('[y_train] Shape:', train_dataset.y.shape)
@@ -92,7 +96,7 @@ class MLBuilder:
         model = model_bulder(train_dataset.X.shape, self.config.num_layers, self.config.hidden_dim, 
                              self.config.kernel_size, self.device, self.dropout_rate, self.y_step)
         model.to(self.device)
-        criterion = RMSELoss(reg=self.config.regularization)
+        criterion = RMSELoss(reg=self.config.regularization, initial_state=initial_state)
         opt_params = {'lr': self.config.learning_rate, 
                       'alpha': 0.9, 
                       'eps': 1e-6}

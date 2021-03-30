@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 matplotlib.use('Agg') #non-interactive backends for png files
 from matplotlib.ticker import MaxNLocator
 import torch
+import json
 
 class Util:
     def __init__(self, model_descr, dataset_type='notebooks', version=0, prefix=''):
@@ -150,12 +151,33 @@ class Util:
         mask_land = np.load(filename)
         mask_land = torch.from_numpy(mask_land).float()
         return mask_land
+    
+    def save_normalization_parameters(self, normalizer_x, normalizer_y):
+        mean_x = [x.item() for x in normalizer_x.mean]
+        std_x = [x.item() for x in normalizer_x.std]
+        mean_y = [y.item() for y in normalizer_y.mean]
+        std_y = [y.item() for y in normalizer_y.std]
+        
+        norm_dir = self.__create_dir("normalization_parameters")
+        data = {'x': { 'mean': mean_x, 'std': std_x },
+                'y': { 'mean': mean_y, 'std': std_y }}
+        
+        filename = os.path.join(norm_dir, self.base_filename)
+        with open(filename, 'w') as json_file:
+            json.dump(data, json_file)
+            
+    def load_normalizaion_parameter(self):
+        norm_dir = self.__create_dir("normalization_parameters")
+        filename = os.path.join(norm_dir, self.base_filename)
+        with open(filename, 'r') as json_file:
+            data = json.load(json_file) 
+        return data
         
     @staticmethod         
     def generate_list_from(integer, size=3):
         if isinstance(integer,int):
             return [integer] * size
-        return integer        
+        return integer
         
     def __create_train_val_dir_in(self, dir_path):
         train_dir = os.path.join(dir_path, 'train')

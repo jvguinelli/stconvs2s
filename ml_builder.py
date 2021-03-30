@@ -14,6 +14,7 @@ from tool.train_evaluate import Trainer, Evaluator
 from tool.dataset import NetCDFDataset
 from tool.loss import RMSELoss
 from tool.utils import Util
+from tool.normalizer import Normalizer
 
 import torch
 import torch.nn as nn
@@ -48,6 +49,27 @@ class MLBuilder:
                                       validation_split=validation_split, x_step=self.x_step, is_validation=True)
         test_dataset  = NetCDFDataset(ds, test_split=test_split, 
                                       validation_split=validation_split, x_step=self.x_step, is_test=True)
+        
+        # normalizing data 
+        num_channels = train_dataset.X.shape[1]
+        if num_channels > 1:
+            normalizer_x = Normalizer()
+            normalizer_x.observe(train_dataset.X)
+            normalizer_y = Normalizer()
+            normalizer_y.observe(train_dataset.y)
+            
+            train_dataset.X = normalizer_x.normalize(train_dataset.X)
+            train_dataset.y = normalizer_y.normalize(train_dataset.y)
+            
+            val_dataset.X = normalizer_x.normalize(val_dataset.X)
+            val_dataset.y = normalizer_y.normalize(val_dataset.y)
+            
+            test_dataset.X = normalizer_x.normalize(test_dataset.X)
+            test_dataset.y = normalizer_y.normalize(test_dataset.y)
+            
+        util = Util(self.config.model, self.dataset_type, self.config.version, self.filename_prefix)
+        
+        util.save_normalization_parameters(normalizer_x, normalizer_y)
         
         # INITIAL STATE - batch x channel x time x latitude x longitude
         initial_state = torch.tensor(train_dataset.X)[:1, :, :1].to(self.device)
@@ -101,7 +123,6 @@ class MLBuilder:
                       'alpha': 0.9, 
                       'eps': 1e-6}
         optimizer = torch.optim.RMSprop(model.parameters(), **opt_params)
-        util = Util(self.config.model, self.dataset_type, self.config.version, self.filename_prefix)
         
         train_info = {'train_time': 0}
         if self.config.pre_trained is None:

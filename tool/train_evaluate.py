@@ -111,7 +111,7 @@ class Evaluator:
        
     def eval(self, is_test=True, is_chirps=False):
         self.model.eval()
-        predictions = []
+        t_input, t_target, predictions = [], [], []
         cumulative_rmse, cumulative_mae = 0.0, 0.0
         observation_rmse, observation_mae = [0]*self.step, [0]*self.step
         loader_size = len(self.data_loader)
@@ -119,7 +119,9 @@ class Evaluator:
         with torch.no_grad(): 
             for batch_i, (inputs, target) in enumerate(self.data_loader):
                 inputs, target = inputs.to(self.device), target.to(self.device)
+                target_2 = target
                 output = self.model(inputs)
+                output_2 = output
                 if is_chirps:
                     output = mask_land * output    
                 rmse_loss = self.loss_fn(output, target)
@@ -128,20 +130,24 @@ class Evaluator:
                 cumulative_mae += mae_loss.item()
                 
                 if is_test:
-                    predictions.append(output)
+                    t_input.append(inputs)
+                    t_target.append(target_2)
+                    predictions.append(output_2)
                     #metric per observation (lat x lon) at each time step (t) 
                     for i in range(self.step):
-                        output_observation = output[:,:,i,:,:]
-                        target_observation = target[:,:,i,:,:]
-                        rmse_loss_obs = self.loss_fn(output_observation,target_observation)
+                        output_observation = output[:,:,i:i+1,:,:]
+                        target_observation = target[:,:,i:i+1,:,:]
+                        rmse_loss_obs = self.loss_fn(output_observation, target_observation)
                         mae_loss_obs = F.l1_loss(output_observation, target_observation)
                         observation_rmse[i] += rmse_loss_obs.item()
                         observation_mae[i] += mae_loss_obs.item()
         
             if is_test:
+                t_input = torch.cat(t_input, dim=0)
+                t_target = torch.cat(t_target, dim=0)
                 predictions = torch.cat(predictions, dim=0)
-                self.util.save_predictions(predictions)
-                # self.util.save_examples(inputs, target, output, self.step)
+                self.util.save_predictions(t_input, t_target, predictions)
+                #self.util.save_examples(inputs, target, output, self.step)
                 print('>>>>>>>>> Metric per observation (lat x lon) at each time step (t)')
                 print('RMSE')
                 print(*np.divide(observation_rmse, batch_i+1), sep = ",")

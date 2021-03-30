@@ -50,6 +50,8 @@ class MLBuilder:
         test_dataset  = NetCDFDataset(ds, test_split=test_split, 
                                       validation_split=validation_split, x_step=self.x_step, is_test=True)
         
+        util = Util(self.config.model, self.dataset_type, self.config.version, self.filename_prefix)
+        
         # normalizing data 
         num_channels = train_dataset.X.shape[1]
         if num_channels > 1:
@@ -67,9 +69,7 @@ class MLBuilder:
             test_dataset.X = normalizer_x.normalize(test_dataset.X)
             test_dataset.y = normalizer_y.normalize(test_dataset.y)
             
-        util = Util(self.config.model, self.dataset_type, self.config.version, self.filename_prefix)
-        
-        util.save_normalization_parameters(normalizer_x, normalizer_y)
+            util.save_normalization_parameters(normalizer_x, normalizer_y)
         
         # INITIAL STATE - batch x channel x time x latitude x longitude
         initial_state = torch.tensor(train_dataset.X)[:1, :, :1].to(self.device)

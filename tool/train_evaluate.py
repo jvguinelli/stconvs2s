@@ -46,8 +46,20 @@ class Trainer:
         mask_land = self.util.get_mask_land().to(self.device)
         for batch_idx, (inputs, target) in enumerate(self.train_loader):
             inputs, target = inputs.to(self.device), target.to(self.device)
+            
+            # output = self.model(inputs)
             # get prediction
-            output = self.model(inputs)
+            x_size, y_size = inputs.shape[2], target.shape[2]
+            #output = self.model(inputs)
+            if x_size <= y_size:
+                pred_size = y_size//x_size
+                predictions = []
+                for i in range(pred_size):
+                    out = self.model(inputs)
+                    predictions.append(out)
+                    inputs = out
+                output = torch.cat(predictions, dim=2)
+           
             if is_chirps:
                 output = mask_land * output
             loss = self.loss_fn(output, target)
@@ -119,9 +131,20 @@ class Evaluator:
         with torch.no_grad(): 
             for batch_i, (inputs, target) in enumerate(self.data_loader):
                 inputs, target = inputs.to(self.device), target.to(self.device)
-                target_2 = target
-                output = self.model(inputs)
-                output_2 = output
+                
+                # get prediction
+                # output = self.model(inputs)
+                x_size, y_size = inputs.shape[2], target.shape[2]
+                #output = self.model(inputs)
+                if x_size <= y_size:
+                    pred_size = y_size//x_size
+                    predictions = []
+                    for i in range(pred_size):
+                        out = self.model(inputs)
+                        predictions.append(out)
+                        inputs = out
+                    output = torch.cat(predictions, dim=2)
+                                           
                 if is_chirps:
                     output = mask_land * output    
                 rmse_loss = self.loss_fn(output, target)
@@ -130,9 +153,6 @@ class Evaluator:
                 cumulative_mae += mae_loss.item()
                 
                 if is_test:
-                    t_input.append(inputs)
-                    t_target.append(target_2)
-                    predictions.append(output_2)
                     #metric per observation (lat x lon) at each time step (t) 
                     for i in range(self.step):
                         output_observation = output[:,:,i:i+1,:,:]
@@ -143,10 +163,6 @@ class Evaluator:
                         observation_mae[i] += mae_loss_obs.item()
         
             if is_test:
-                t_input = torch.cat(t_input, dim=0)
-                t_target = torch.cat(t_target, dim=0)
-                predictions = torch.cat(predictions, dim=0)
-                self.util.save_predictions(t_input, t_target, predictions)
                 #self.util.save_examples(inputs, target, output, self.step)
                 print('>>>>>>>>> Metric per observation (lat x lon) at each time step (t)')
                 print('RMSE')

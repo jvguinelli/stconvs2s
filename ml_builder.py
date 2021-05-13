@@ -117,6 +117,12 @@ class MLBuilder:
         model_bulder = models[self.config.model]
         model = model_bulder(train_dataset.X.shape, self.config.num_layers, self.config.hidden_dim, 
                              self.config.kernel_size, self.device, self.dropout_rate, self.y_step)
+        
+        # Use all disponible GPUs
+        if torch.cuda.device_count() > 1:
+            print("Let's use", torch.cuda.device_count(), "GPUs!")
+            model = nn.DataParallel(model)
+    
         model.to(self.device)
         criterion = RMSELoss(reg=self.config.regularization, initial_state=initial_state)
         opt_params = {'lr': self.config.learning_rate, 
